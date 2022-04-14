@@ -36,8 +36,13 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <stdio.h>
+#include <arpa/inet.h>
+#include <string.h>
 
 #define BUFF_SIZE 1024
+#define LISTEN_BACKLOG 4
+#define PORT 8080
 
 struct conn {
     int fd;
@@ -46,6 +51,31 @@ struct conn {
     unsigned int bufflen;
 };
 
+void check_error(int , char *);
+
 int main() {
+    int listen_socket;
+    struct sockaddr_in server_addr;
+
+    // Create a listen socket.
+    check_error(listen_socket = socket(AF_INET, SOCK_STREAM, 0),
+            "Socket creation failed");
+
+    // Bind a listen socket.
+    memset(&server_addr, 0, sizeof(struct sockaddr_in));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(PORT);
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    check_error(bind(listen_socket, (struct sockaddr *) &server_addr,
+                sizeof(struct sockaddr)), "Binding failed");
+
+    // Wait for new packet.
+    check_error(listen(listen_socket, LISTEN_BACKLOG), "Listening failed");
     return 0;
+}
+
+void check_error(int return_value, char message[]) {
+    if (return_value < 0) {
+        perror(message);
+    }
 }
