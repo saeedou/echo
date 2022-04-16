@@ -100,10 +100,22 @@ int main() {
     client_conn.bufflen = sizeof(client_conn.buffer);
     if (read(client_conn.fd, &client_conn.buffer, client_conn.bufflen) < 0) {
         perror("Read failed");
-    } else {
         for (i=0;i<10;i++) {
             if (conn_list[i].fd == -1) {
                 conn_list[i] = client_conn;
+                break;
+            }
+        }
+    }
+
+  // Write from connection struct buffer into socket.
+  // If error remove the connection struct from the global list and return.
+  // Set connection buffer size to zero
+    if (write(client_conn.fd, &client_conn.buffer, client_conn.bufflen) < 0) {
+        perror("Write failed");
+        for (i=0;i<10;i++) {
+            if (conn_list[i].fd == client_conn.fd) {
+                conn_list[i] = no_connection;
                 break;
             }
         }
