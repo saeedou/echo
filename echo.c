@@ -48,7 +48,7 @@ struct conn {
     int fd;
     struct sockaddr addr;
     char buffer[BUFF_SIZE];
-    unsigned int bufflen;
+    unsigned int bufflen; // TODO: what is the purpose and what is the difference with BUFF_SIZE?
 };
 
 void check_error(int , char *);
@@ -56,6 +56,8 @@ void check_error(int , char *);
 int main() {
     int listen_socket;
     struct sockaddr_in server_addr;
+    struct conn conn_list[10];
+    struct conn no_connection;
 
     // Create a listen socket.
     check_error(listen_socket = socket(AF_INET, SOCK_STREAM, 0),
@@ -71,6 +73,24 @@ int main() {
 
     // Wait for new packet.
     check_error(listen(listen_socket, LISTEN_BACKLOG), "Listening failed");
+
+    // Allocate a new connection struct
+    struct conn client_conn;
+
+    //  Store IP address and source PORT
+    int client_addr_len = sizeof(client_conn.addr);
+    check_error(client_conn.fd = accept(listen_socket, &client_conn.addr,
+                &client_addr_len), "Accept failed");
+
+    //  Set connection buffer size to zero TODO: size of the buffer or the buffer itself?
+    memset(&client_conn.buffer, 0, BUFF_SIZE);
+
+    //  Add connection struct to global connection list
+    no_connection.fd = -1;
+    for (int i=0;i<10;i++) {
+        conn_list[i] = no_connection;
+    }
+    conn_list[client_conn.fd - 4] = client_conn;
     return 0;
 }
 
