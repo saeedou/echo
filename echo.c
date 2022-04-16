@@ -39,10 +39,12 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <unistd.h>
 
 #define BUFF_SIZE 1024
 #define LISTEN_BACKLOG 4
 #define PORT 8080
+#define CONN_NUM 10
 
 struct conn {
     int fd;
@@ -54,9 +56,10 @@ struct conn {
 void check_error(int , char *);
 
 int main() {
+    int i; // An index for loops
     int listen_socket;
     struct sockaddr_in server_addr;
-    struct conn conn_list[10];
+    struct conn conn_list[CONN_NUM];
     struct conn no_connection;
 
     // Create a listen socket.
@@ -87,10 +90,25 @@ int main() {
 
     //  Add connection struct to global connection list
     no_connection.fd = -1;
-    for (int i=0;i<10;i++) {
+    for (i=0;i<10;i++) {
         conn_list[i] = no_connection;
     }
-    conn_list[client_conn.fd - 4] = client_conn;
+
+    // Read the packet.
+    // If error remove the connection struct from the global list and return.
+    // Save the new packet in the connection struct.
+    client_conn.bufflen = sizeof(client_conn.buffer);
+    if (read(client_conn.fd, &client_conn.buffer, client_conn.bufflen) < 0) {
+        perror("Read failed");
+    } else {
+        for (i=0;i<10;i++) {
+            if (conn_list[i].fd == -1) {
+                conn_list[i] = client_conn;
+                break;
+            }
+        }
+    }
+
     return 0;
 }
 
