@@ -55,6 +55,7 @@ struct conn {
 
 void check_error(int , char *);
 void write_packet(struct conn connection);
+void read_packet(struct conn connection, struct conn connection_list *);
 
 int main() {
     int i; // An index for loops
@@ -98,16 +99,18 @@ int main() {
     // Read the packet.
     // If error remove the connection struct from the global list and return.
     // Save the new packet in the connection struct.
-    client_conn.bufflen = sizeof(client_conn.buffer);
-    if (read(client_conn.fd, &client_conn.buffer, client_conn.bufflen) < 0) {
-        perror("Read failed");
-        for (i=0;i<CONN_NUM;i++) {
-            if (conn_list[i].fd == -1) {
-                conn_list[i] = client_conn;
-                break;
-            }
-        }
-    }
+    read_packet(client_conn, &conn_list);
+
+    //client_conn.bufflen = sizeof(client_conn.buffer);
+    //if (read(client_conn.fd, &client_conn.buffer, client_conn.bufflen) < 0) {
+    //    perror("Read failed");
+    //    for (i=0;i<CONN_NUM;i++) {
+    //        if (conn_list[i].fd == -1) {
+    //            conn_list[i] = client_conn;
+    //            break;
+    //        }
+    //    }
+    //}
 
   // Write from connection struct buffer into socket.
   // If error remove the connection struct from the global list and return.
@@ -128,4 +131,16 @@ void write_packet(struct conn connection) {
         } else {
             memset(&connection.buffer, 0, BUFF_SIZE);
         }
+}
+void read_packet(struct conn connection, struct conn connection_list[]){
+    connection.bufflen = sizeof(connection.buffer);
+    if (read(connection.fd, &connection.buffer, connection.bufflen) < 0) {
+        perror("Read failed");
+        for (int i = 0; i < CONN_NUM ; i++) {
+            if (connection_list[i].fd == -1) {
+                connection_list[i] = connection;
+                break;
+            }
+        }
+    }
 }
